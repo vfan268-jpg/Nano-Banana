@@ -110,7 +110,7 @@ async def generate_prompt_gemini(ref_bytes: bytes, extra: str, rooms: list[dict]
         "generationConfig": {"temperature": 0.7, "maxOutputTokens": 800}
     }
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
     async with httpx.AsyncClient(timeout=60) as client:
         r = await client.post(url, json=payload)
         r.raise_for_status()
