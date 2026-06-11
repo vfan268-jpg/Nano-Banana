@@ -93,7 +93,7 @@ async def generate_prompt_gemini(ref_bytes: bytes, extra: str, rooms: list, face
         "generationConfig": {"temperature": 0.7, "maxOutputTokens": 800}
     }
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://aiplatform.googleapis.com/v1/projects/my-bot-project/locations/us-central1/publishers/google/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
     async with httpx.AsyncClient(timeout=60) as client:
         r = await client.post(url, json=payload)
         r.raise_for_status()
@@ -102,7 +102,7 @@ async def generate_prompt_gemini(ref_bytes: bytes, extra: str, rooms: list, face
     return data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
 async def generate_image_gemini(prompt: str) -> bytes:
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://aiplatform.googleapis.com/v1/projects/my-bot-project/locations/us-central1/publishers/google/models/gemini-2.0-flash-preview-image-generation:generateContent?key={GEMINI_API_KEY}"
     payload = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]}
