@@ -49,6 +49,9 @@ async def download_tg_photo(bot: Bot, photo: types.PhotoSize) -> bytes:
     buf  = await bot.download_file(file.file_path)
     return buf.read()
 
+def get_headers():
+    return {"Authorization": f"Bearer {GEMINI_API_KEY}", "Content-Type": "application/json"}
+
 async def generate_prompt_gemini(ref_bytes: bytes, extra: str, rooms: list, faces: list) -> str:
     system_instruction = (
         "You are an expert AI image prompt engineer specializing in realistic lifestyle/fashion photography. "
@@ -60,8 +63,8 @@ async def generate_prompt_gemini(ref_bytes: bytes, extra: str, rooms: list, face
         "- DO describe: clothing color, style, fabric texture in detail\n"
         "- DO describe: shooting style (POV, mirror selfie, etc), camera angle\n"
         "- DO describe: lighting color, intensity, atmosphere, mood\n"
-        "- DO describe: phone camera imperfections — slight blur, grain, uneven focus, natural noise\n"
-        "- The background MUST be from the provided room photos — pick the most suitable room and describe it as the location\n"
+        "- DO describe: phone camera imperfections - slight blur, grain, uneven focus, natural noise\n"
+        "- The background MUST be from the provided room photos - pick the most suitable room and describe it as the location\n"
         "- End with technical tags: 4k, realistic texture, photorealistic, shot on smartphone\n"
         "- Do NOT use markdown. Output ONLY the prompt text, nothing else."
     )
@@ -72,7 +75,7 @@ async def generate_prompt_gemini(ref_bytes: bytes, extra: str, rooms: list, face
     parts.append({"inline_data": {"mime_type": "image/jpeg", "data": ref_b64}})
 
     if rooms:
-        parts.append({"text": f"\nAVAILABLE ROOMS ({len(rooms)} options — pick best match and use as background):"})
+        parts.append({"text": f"\nAVAILABLE ROOMS ({len(rooms)} options - pick best match and use as background):"})
         for r in rooms[:6]:
             parts.append({"inline_data": {"mime_type": r["mime"], "data": r["b64"]}})
             parts.append({"text": f"[Room: {r['name']}]"})
@@ -93,22 +96,22 @@ async def generate_prompt_gemini(ref_bytes: bytes, extra: str, rooms: list, face
         "generationConfig": {"temperature": 0.7, "maxOutputTokens": 800}
     }
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
     async with httpx.AsyncClient(timeout=60) as client:
-    r = await client.post(url, json=payload, headers={"Authorization": f"Bearer {GEMINI_API_KEY}"})
+        r = await client.post(url, json=payload, headers=get_headers())
         r.raise_for_status()
         data = r.json()
 
     return data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
 async def generate_image_gemini(prompt: str) -> bytes:
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key={GEMINI_API_KEY}"
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent"
     payload = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]}
     }
     async with httpx.AsyncClient(timeout=120) as client:
-    r = await client.post(url, json=payload, headers={"Authorization": f"Bearer {GEMINI_API_KEY}"})
+        r = await client.post(url, json=payload, headers=get_headers())
         r.raise_for_status()
         data = r.json()
 
