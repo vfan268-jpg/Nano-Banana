@@ -120,17 +120,21 @@ async def generate_prompt_gemini(ref_bytes: bytes, extra: str, rooms: list[dict]
 
 # ─── NANO BANANA: генерация картинки ──────────────────────────────────────────
 async def generate_image_banana(prompt: str) -> bytes:
-    """Отправляем промт в Nano Banana, получаем картинку."""
-    url = "https://api.nanobanana.io/v1/generate"   # уточни endpoint в доках
-    headers = {"Authorization": f"Bearer {BANANA_API_KEY}", "Content-Type": "application/json"}
+    """Генерация картинки через Gemini Nano Banana."""
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key={GEMINI_API_KEY}"
     payload = {
-        "model": BANANA_MODEL_ID,
-        "prompt": prompt,
-        "negative_prompt": "blurry face, deformed, ugly, watermark, text, extra limbs, bad anatomy",
-        "width": 768,
-        "height": 1024,
-        "num_inference_steps": 30,
-        "guidance_scale": 7.5,
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]}
+    }
+    async with httpx.AsyncClient(timeout=120) as client:
+        r = await client.post(url, json=payload)
+        r.raise_for_status()
+        data = r.json()
+
+    for part in data["candidates"][0]["content"]["parts"]:
+        if part.get("inlineData"):
+            return base64.b64decode(part["inlineData"]["data"])
+    raise ValueError("Картинка не пришла от Gemini")
     }
     async with httpx.AsyncClient(timeout=120) as client:
         r = await client.post(url, headers=headers, json=payload)
